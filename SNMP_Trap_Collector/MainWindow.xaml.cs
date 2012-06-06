@@ -17,6 +17,7 @@ using System.Globalization;
 using SnmpSharpNet;
 using System.Net.Sockets;
 using System.Net;
+using OxyPlot;
 
 namespace SNMP_Trap_Collector
 {
@@ -28,12 +29,24 @@ namespace SNMP_Trap_Collector
 
         private readonly BackgroundWorker _worker = new BackgroundWorker();
         private string currentVoltage;
+        private PlotModel model;
+        private LineSeries voltageLine;
 
         public MainWindow()
         {
             InitializeComponent();
             InitializeBackgroundWorker();
             _worker.RunWorkerAsync();
+            DataContext = new MainViewModel();
+            model = new PlotModel("SNMP Trap Collector", "Voltage Chart");
+            model.Padding = new OxyThickness(-20, 0, 20, 0);
+            voltageLine = new LineSeries("Voltage") { MarkerType = MarkerType.Square };
+            model.Series.Add(voltageLine);
+            model.Axes.Add(new LinearAxis(AxisPosition.Left, -1, 4, "Voltage"));
+            model.Axes.Add(new LinearAxis(AxisPosition.Bottom, "Timestamp"));
+            MainViewModel mwm = new MainViewModel();
+            mwm.Model = model;
+            DataContext = mwm;
         }
 
         ///<summary>
@@ -47,8 +60,6 @@ namespace SNMP_Trap_Collector
             this._worker.WorkerSupportsCancellation = true;
             // Add event handler for when RunWorkerAsync() is called - i.e. start of thread.
             this._worker.DoWork += new DoWorkEventHandler(worker_DoWork);
-            // Add event handler for when a progress change occurs.
-            this._worker.ProgressChanged += new ProgressChangedEventHandler(worker_ProgressChanged);
         }
 
         ///<summary>
@@ -58,7 +69,7 @@ namespace SNMP_Trap_Collector
         {
             BackgroundWorker worker = sender as BackgroundWorker;
 
-            // Construct a socket and bind it to the trap manager port 162 
+            // Construct a socket and bind it to the trap manager port 10162 
             Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             IPEndPoint ipep = new IPEndPoint(IPAddress.Any, 10162);
             EndPoint ep = (EndPoint)ipep;
@@ -107,6 +118,9 @@ namespace SNMP_Trap_Collector
                             string[] values = voltage.Split('V');
                             _worker.ReportProgress((int)Math.Floor((double)((double.Parse(values[0], CultureInfo.InvariantCulture) / max * 100))));
                             currentVoltage = voltage;
+                            double test = double.Parse(values[0]);
+                            voltageLine.Points.Add(new DataPoint(double.Parse(pkt.Pdu.TimeStamp.ToString()), double.Parse(values[0], CultureInfo.InvariantCulture)));
+                            model.RefreshPlot(true);
                         }
                         Console.WriteLine("** End of SNMP Version 1 TRAP data.");
                     }
@@ -118,15 +132,6 @@ namespace SNMP_Trap_Collector
                 }
             }
             Yield(1000000);
-        }
-
-        ///<summary>
-        ///Progress changed event
-        ///</summary>
-        private void worker_ProgressChanged(object sender, ProgressChangedEventArgs e)
-        {
-            this.label1.Content = currentVoltage;
-            this.progressBar1.Value = e.ProgressPercentage;
         }
 
         private void Yield(long ticks)

@@ -1,9 +1,9 @@
 ﻿<Window x:Class="SNMP_Trap_Collector.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="MainWindow" Height="87" Width="560">
-    <Grid>
-        <ProgressBar HorizontalAlignment="Stretch" Name="progressBar1" VerticalAlignment="Stretch" Width="Auto" Height="Auto" />
-        <Label Content="Label" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" HorizontalAlignment="Stretch" Name="label1" VerticalAlignment="Stretch" Width="Auto" Height="Auto" />
+        xmlns:oxy="clr-namespace:OxyPlot.Wpf;assembly=OxyPlot.Wpf" 
+        Title="MainWindow" Height="551" Width="908.5">
+    <Grid Margin="10,10,-6,15">
+        <oxy:Plot Model="{Binding Model}" Margin="0,0,10,0"/>
     </Grid>
 </Window>
